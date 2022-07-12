@@ -20,7 +20,7 @@ io.on(`connection` , (socket) =>{
 
     socket.on('close', () => {socket.broadcast.emit('callended');});
 
-    socket.on("callUser", ({ userToCall , signalData , from , name}) => 
+    socket.on("callUser", ({ userToCall , signalData , from , name  }) => 
     io.to(userToCall).emit('callUser', {signal : signalData, from , name}));
 
     socket.on('answerCall', (data) =>{
