@@ -6,42 +6,45 @@ const SocketContext = createContext();
 const socket = io('http://localhost:5000');
 
 const ContextProvider = ({children}) => {
-    const [stream , setStream] = usestate(null);
-    const [me,setMe] = usestate('');
-    const [call,setCall] = usestate({});
-    const [callAccepted , setCallAccepted ] = usestate(false);
-    const [callEnded , setCallEnded ] = usestate(false);
-    const [name , setName] = usestate('');
+    const [callAccepted, setCallAccepted] = useState(false);
+  const [callEnded, setCallEnded] = useState(false);
+  const [stream, setStream] = useState();
+  const [name, setName] = useState('');
+  const [call, setCall] = useState({});
+  const [me, setMe] = useState('');
 
     const myVideo = useRef();
     const userVideo = useRef();
     const connectionRef = useRef();
 
     useEffect(() => {
-        navigator.mediaDevices.getUserMedia({video : true, audio : true})
-        .then((currentStream) => {
-            setStream(currentStream);
+        navigator.mediaDevices
+      .getUserMedia({ video: true, audio: true })
+      .then((currentStream) => {
+        setStream(currentStream);
 
-            myVideo.current.srcObject = currentStream;
+        myVideo.current.srcObject= currentStream;
 
-        });
+        }).catch((err) => {
+            console.log("Not able to get user media permisiion", err);
+          });
 
         socket.on('me', (id)=>{
             setMe(id);
         });
 
-        socket.on('callUser', (from , name  , signal)=>{
-            setCall({isReceivedCall : true , from , name , signal})
+        socket.on('callUser', (from , name, signal)=>{
+            setCall({isReceivedCall : true , from , name , signal});
 
-        })
+        });
 
 
 
     },[]);   //[] is empty dependency array otherwise it's always going to run.
-    const answercall = () =>{
+    const answerCall = () =>{
         setCallAccepted(true);
         const peer = new Peer({initiator : false , trickle : false, stream})
-        peer.on('signal', () =>{// callback function that we want to execute when call is accepted;
+        peer.on('signal', (data) =>{// callback function that we want to execute when call is accepted;
             socket.emit('ansercall' , {signal : data , to: call.from}) //passing data to answercall
 
         }) ;
@@ -59,7 +62,7 @@ const ContextProvider = ({children}) => {
 
     const callUser = (id) => {
         const peer = new Peer({initiator : true , trickle : false, stream})  //here initiator value will be true as we are the one who is calling
-        peer.on('signal', () =>{
+        peer.on('signal', (data) =>{
             socket.emit('callUser' , {userToCall : id , signalData : data , from : me , name}) 
 
         }) ;
@@ -89,7 +92,7 @@ const ContextProvider = ({children}) => {
          <SocketContext.Provider value = {{call,
          callAccepted,
          myVideo,
-         userVideo,stream,name,setName,callEnded , me, callUser, leaveCall , answercall}}> 
+         userVideo,stream,name,setName,callEnded , me, callUser, leaveCall , answerCall}}> 
          {children} 
          
 
